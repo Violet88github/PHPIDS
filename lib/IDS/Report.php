@@ -142,7 +142,7 @@ class Report implements \Countable, \IteratorAggregate
      *
      * @return string[]|array
      */
-    public function getTags()
+    public function getTags(): array
     {
         if (!$this->tags) {
             $this->tags = array();
@@ -165,7 +165,7 @@ class Report implements \Countable, \IteratorAggregate
      *
      * @return integer
      */
-    public function getImpact()
+    public function getImpact(): int
     {
         if (!$this->impact) {
             $this->impact = 0;
@@ -185,7 +185,7 @@ class Report implements \Countable, \IteratorAggregate
      * @throws \InvalidArgumentException if argument is illegal
      * @return boolean
      */
-    public function hasEvent($name)
+    public function hasEvent($name): bool
     {
         if (!is_scalar($name)) {
             throw new \InvalidArgumentException('Invalid argument given');
@@ -199,7 +199,7 @@ class Report implements \Countable, \IteratorAggregate
      *
      * @return integer
      */
-    public function count()
+    public function count(): int
     {
         return count($this->events);
     }
@@ -223,7 +223,7 @@ class Report implements \Countable, \IteratorAggregate
      *
      * @return boolean
      */
-    public function isEmpty()
+    public function isEmpty(): bool
     {
         return empty($this->events);
     }
@@ -245,7 +245,7 @@ class Report implements \Countable, \IteratorAggregate
      *
      * @return array
      */
-    public function getCentrifuge()
+    public function getCentrifuge(): array
     {
         return $this->centrifuge;
     }

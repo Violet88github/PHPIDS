@@ -213,7 +213,7 @@ class Report implements \Countable, \IteratorAggregate
      *
      * @return \Iterator the event collection
      */
-    public function getIterator()
+    public function getIterator(): \Iterator
     {
         return new \ArrayIterator($this->events);
     }

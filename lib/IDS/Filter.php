@@ -78,18 +78,20 @@ class Filter
      */
     protected $description = '';
 
+    protected $id;
+
     /**
      * Constructor
      *
-     * @param integer           $id          filter id
-     * @param string            $rule        filter rule
-     * @param string            $description filter description
+     * @param integer $id          filter id
+     * @param string $rule        filter rule
+     * @param string $description filter description
      * @param string[]|array    $tags        list of tags
-     * @param integer           $impact      filter impact level
+     * @param integer $impact      filter impact level
      *
      * @return \IDS\Filter
      */
-    public function __construct($id, $rule, $description, array $tags, $impact)
+    public function __construct(int $id, string $rule, string $description, array $tags, int $impact)
     {
         $this->id          = $id;
         $this->rule        = $rule;
@@ -106,10 +108,10 @@ class Filter
      *
      * @param string $input the string input to match
      *
-     * @throws \InvalidArgumentException if argument is no string
      * @return boolean
+     *@throws \InvalidArgumentException if argument is no string
      */
-    public function match($input)
+    public function match(string $input): bool
     {
         if (!is_string($input)) {
             throw new \InvalidArgumentException(
@@ -125,7 +127,7 @@ class Filter
      *
      * @return string
      */
-    public function getDescription()
+    public function getDescription(): string
     {
         return $this->description;
     }
@@ -138,7 +140,7 @@ class Filter
      *
      * @return string[]|array
      */
-    public function getTags()
+    public function getTags(): array
     {
         return $this->tags;
     }
@@ -148,7 +150,7 @@ class Filter
      *
      * @return string
      */
-    public function getRule()
+    public function getRule(): string
     {
         return $this->rule;
     }
@@ -158,7 +160,7 @@ class Filter
      *
      * @return integer
      */
-    public function getImpact()
+    public function getImpact(): int
     {
         return $this->impact;
     }
@@ -168,7 +170,7 @@ class Filter
      *
      * @return integer
      */
-    public function getId()
+    public function getId(): int
     {
         return $this->id;
     }

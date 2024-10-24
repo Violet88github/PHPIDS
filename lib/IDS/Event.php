@@ -138,7 +138,7 @@ class Event implements \Countable, \IteratorAggregate
      *
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -158,7 +158,7 @@ class Event implements \Countable, \IteratorAggregate
      *
      * @return integer
      */
-    public function getImpact()
+    public function getImpact(): int
     {
         if (!$this->impact) {
             $this->impact = 0;
@@ -175,7 +175,7 @@ class Event implements \Countable, \IteratorAggregate
      *
      * @return string[]|array
      */
-    public function getTags()
+    public function getTags(): array
     {
         foreach ($this->getFilters() as $filter) {
             $this->tags = array_merge($this->tags, $filter->getTags());
@@ -189,7 +189,7 @@ class Event implements \Countable, \IteratorAggregate
      *
      * @return Filter[]|array
      */
-    public function getFilters()
+    public function getFilters(): array
     {
         return $this->filters;
     }
@@ -202,7 +202,7 @@ class Event implements \Countable, \IteratorAggregate
      *
      * @return integer
      */
-    public function count()
+    public function count(): int
     {
         return count($this->getFilters());
     }
@@ -214,7 +214,7 @@ class Event implements \Countable, \IteratorAggregate
      *
      * @return \Iterator the filter collection
      */
-    public function getIterator()
+    public function getIterator(): \Iterator
     {
         return new \ArrayIterator($this->getFilters());
     }

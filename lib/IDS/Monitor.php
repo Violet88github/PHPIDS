@@ -131,6 +131,16 @@ class Monitor
      */
     private $tmpJsonString = '';
 
+      /**
+     * Centrifuge data
+     *
+     * This variable - initiated as an empty array - carries all information
+     * about the centrifuge data if available
+     *
+     * @var array
+     */
+    protected $centrifuge = [];
+
     /**
      * Constructor
      *

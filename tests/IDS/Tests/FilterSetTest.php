@@ -22,7 +22,7 @@ use IDS\Init;
 use IDS\Filter;
 use IDS\Filter\Storage;
 
-class FilterSetTest extends \PHPUnit\Framework\TestCase
+class FilterSetTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var array
@@ -34,7 +34,7 @@ class FilterSetTest extends \PHPUnit\Framework\TestCase
      */
     protected $xmlFilter;
 
-    protected function setUp(): void
+    public function setUp()
     {
         $this->jsonFilter = $this->getFilterset('json');
         $this->xmlFilter = $this->getFilterSet('xml');

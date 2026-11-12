@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="tests/IDS/Tests/bootstrap.php"
-         cacheDirectory=".cache/phpunit"
-         colors="true">
+<phpunit backupGlobals="false"
+         convertErrorsToExceptions="true"
+         convertWarningsToExceptions="true"
+         convertNoticesToExceptions="true"
+         mapTestClassNameToCoveredClassName="true"
+         strict="true"
+         verbose="true"
+         colors="true"
+         timeoutForLargeTests="100"
+         bootstrap="tests/IDS/Tests/bootstrap.php">
 
     <testsuites>
         <testsuite name="PHPIDS">
@@ -11,18 +16,25 @@
         </testsuite>
     </testsuites>
 
-    <source>
-        <include>
+    <filter>
+        <whitelist addUncoveredFilesFromWhitelist="true">
             <directory suffix=".php">./lib</directory>
-        </include>
-    </source>
+        </whitelist>
+    </filter>
 
+    <logging>
+        <log type="coverage-html"
+            target="docs/coverage/"
+            charset="UTF-8"
+            yui="true"
+            highlight="true"
+            lowUpperBound="60"
+            highLowerBound="80" />
+    </logging>
     <php>
-        <!-- timings and PCRE limits differ a lot without the JIT; LargeInputTest switches it off where it needs to -->
-        <ini name="pcre.jit" value="1"/>
-        <var name="IDS_TEMP_DIR" value="tmp"/>
+        <var name="IDS_TEMP_DIR" value="/tmp"/>
         <var name="IDS_CONFIG" value="lib/IDS/Config/Config.ini.php"/>
-        <var name="IDS_FILTER_CACHE_FILE" value="tmp/default_filter.cache"/>
+        <var name="IDS_FILTER_CACHE_FILE" value="/tmp/default_filter.cache"/>
         <var name="IDS_FILTER_TYPE" value="xml"/>
         <var name="IDS_FILTER_SET" value="lib/IDS/default_filter.xml"/>
         <var name="IDS_FILTER_SET_XML" value="lib/IDS/default_filter.xml"/>

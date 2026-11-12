@@ -22,14 +22,14 @@ use IDS\Report;
 use IDS\Event;
 use IDS\Filter;
 
-class ReportTest extends \PHPUnit\Framework\TestCase
+class ReportTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var Report
      */
     protected $report;
 
-    protected function setUp(): void
+    public function setUp()
     {
         $this->report = new Report(array(
             new Event("key_a", 'val_b',

@@ -22,14 +22,14 @@ use IDS\Filter;
 use IDS\Filter\Storage;
 use IDS\Init;
 
-class FilterTest extends \PHPUnit\Framework\TestCase
+class FilterTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var Init
      */
     protected $init;
 
-    protected function setUp(): void
+    public function setUp()
     {
         $this->init = Init::init(IDS_CONFIG);
     }
@@ -59,20 +59,20 @@ class FilterTest extends \PHPUnit\Framework\TestCase
     }
 
     public function testInvalidArgumentOnMatch () {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->setExpectedException('InvalidArgumentException');
         $filter = new Filter(1, '^test$', 'My description', array('foo', 'bar'), 10);
         $filter->match(1);
     }
 
     public function testInvalidArgumentInFilterInstanciation1 () {
         $this->markTestSkipped('The values are not validated properly on instanciation');
-        $this->expectException(\InvalidArgumentException::class);
+        $this->setExpectedException('InvalidArgumentException');
         new Filter(1, '^test$', 'my desc', array('foo'), 'test');
     }
 
     public function testInvalidArgumentInFilterInstanciation2 () {
         $this->markTestSkipped('The values are not validated properly on instanciation');
-        $this->expectException(\InvalidArgumentException::class);
+        $this->setExpectedException('InvalidArgumentException');
         new Filter(1, 1, 'my desc', array("foo"), 'bla');
     }
 

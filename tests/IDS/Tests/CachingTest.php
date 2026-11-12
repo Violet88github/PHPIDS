@@ -23,14 +23,14 @@ use IDS\Caching\CacheFactory;
 use IDS\Caching\FileCache;
 use IDS\Caching\SessionCache;
 
-class CachingTest extends \PHPUnit\Framework\TestCase
+class CachingTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var Init
      */
     protected $init;
 
-    protected function setUp(): void
+    public function setUp()
     {
         $this->init = Init::init(IDS_CONFIG);
     }
@@ -102,7 +102,7 @@ class CachingTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($cache->getCache());
     }
 
-    protected function tearDown(): void
+    public function tearDown()
     {
         @unlink(IDS_FILTER_CACHE_FILE);
     }

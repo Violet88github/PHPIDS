@@ -132,77 +132,6 @@ class Monitor
     private $tmpJsonString = '';
 
     /**
-     * Id of the filter reported when a regular expression could not be
-     * evaluated on a value (see Filter::tryMatch() and Converter)
-     */
-    const REGEX_FAILURE_FILTER_ID = 9001;
-
-    /**
-     * Id of the filter reported when a value is larger than max_scan_length
-     * and was therefore only partially scanned
-     */
-    const OVERSIZED_FILTER_ID = 9002;
-
-    /**
-     * Id of the filter reported when the scan ran out of time (max_scan_time)
-     * and a value was therefore not, or only partially, scanned
-     */
-    const SCAN_TIME_FILTER_ID = 9003;
-
-    /**
-     * Values longer than this many bytes are scanned in overlapping chunks
-     * of this size. The rules are regular expressions written for short
-     * input; on a long value some take quadratic time or exhaust PCRE's
-     * limits, which either stalls the request or hides the attack.
-     *
-     * @var integer
-     */
-    private $chunkSize = 4096;
-
-    /**
-     * Bytes shared by two neighbouring chunks, so an attack that sits on a
-     * chunk border is still seen in one piece
-     *
-     * @var integer
-     */
-    private $chunkOverlap = 1024;
-
-    /**
-     * Upper limit of bytes scanned in long values during one run(). Scanning
-     * costs CPU time per byte, so without a limit one large request could
-     * keep a worker busy. Of a value that no longer fits, the start and the
-     * end are scanned and the value is reported as oversized. Values that
-     * fit into a single chunk are always scanned and do not count.
-     *
-     * @var integer
-     */
-    private $maxScanLength = 524288;
-
-    /**
-     * What is left of $maxScanLength in the current run()
-     *
-     * @var integer
-     */
-    private $scanBudget = 0;
-
-    /**
-     * Seconds one run() may spend on scanning, 0 for no limit. How long a
-     * rule takes depends on the input and on PCRE's JIT (without it some
-     * rules need a hundred times longer), so the byte limit alone does not
-     * bound the time. Values that are not scanned in time are reported.
-     *
-     * @var float
-     */
-    private $maxScanTime = 2.0;
-
-    /**
-     * hrtime() after which the current run() stops scanning, null for never
-     *
-     * @var integer|null
-     */
-    private $deadline = null;
-
-    /**
      * Centrifuge data
      *
      * This variable - initiated as an empty array - carries all information
@@ -221,7 +150,7 @@ class Monitor
      * @param  array|null $tags list of tags to which filters should be applied
      * @return Monitor
      */
-    public function __construct(Init $init, ?array $tags = null)
+    public function __construct(Init $init, array $tags = null)
     {
         $this->storage    = new Storage($init);
         $this->tags       = $tags;
@@ -229,24 +158,6 @@ class Monitor
         $this->exceptions = isset($init->config['General']['exceptions']) ? $init->config['General']['exceptions'] : array();
         $this->html       = isset($init->config['General']['html'])       ? $init->config['General']['html'] : array();
         $this->json       = isset($init->config['General']['json'])       ? $init->config['General']['json'] : array();
-
-        $general = $init->config['General'];
-        if (isset($general['scan_chunk_size'])) {
-            $this->chunkSize = max(256, (int) $general['scan_chunk_size']);
-        }
-        if (isset($general['scan_chunk_overlap'])) {
-            $this->chunkOverlap = max(0, (int) $general['scan_chunk_overlap']);
-        }
-        if (isset($general['max_scan_length'])) {
-            $this->maxScanLength = (int) $general['max_scan_length'];
-        }
-        if (isset($general['max_scan_time'])) {
-            $this->maxScanTime = max(0.0, (float) $general['max_scan_time']);
-        }
-        // an overlap as large as the chunk would never advance
-        $this->chunkOverlap  = min($this->chunkOverlap, (int) ($this->chunkSize / 2));
-        $this->maxScanLength = max($this->maxScanLength, 2 * $this->chunkSize);
-        $this->scanBudget    = $this->maxScanLength;
 
         if (isset($init->config['General']['HTML_Purifier_Cache'])) {
             $this->HTMLPurifierCache  = $init->getBasePath() . $init->config['General']['HTML_Purifier_Cache'];
@@ -268,8 +179,6 @@ class Monitor
     public function run(array $request)
     {
         $report = new Report;
-        $this->scanBudget = $this->maxScanLength;
-        $this->deadline   = $this->maxScanTime > 0 ? hrtime(true) + (int) ($this->maxScanTime * 1e9) : null;
         foreach ($request as $key => $value) {
             $report = $this->iterate($key, $value, $report);
         }
@@ -309,9 +218,8 @@ class Monitor
      */
     private function detect($key, $value)
     {
-        // define the pre-filter; the last two alternatives let plain system
-        // paths such as /etc/passwd or /home/x/.ssh/id_rsa reach the rules
-        $preFilter = '([^\w\s/@!?\.]+|(?:\./)|(?:@@\w+)|(?:\+ADw)|(?:union\s+select)|(?:/(?:etc|proc)/)|(?:/\.\w))i';
+        // define the pre-filter
+        $preFilter = '([^\w\s/@!?\.]+|(?:\./)|(?:@@\w+)|(?:\+ADw)|(?:union\s+select))i';
 
         // to increase performance, only start detection if value isn't alphanumeric
         if ((!$this->scanKeys || !$key || !preg_match($preFilter, $key)) && (!$value || !preg_match($preFilter, $value))) {
@@ -341,6 +249,14 @@ class Monitor
             list($key, $value) = $this->jsonDecodeValues($key, $value);
         }
 
+        // use the converter
+        $value = Converter::runAll($value);
+        $value = Converter::runCentrifuge($value, $this);
+
+        // scan keys if activated via config
+        $key = $this->scanKeys ? Converter::runAll($key) : $key;
+        $key = $this->scanKeys ? Converter::runCentrifuge($key, $this) : $key;
+
         $filterSet = $this->storage->getFilterSet();
 
         if ($tags = $this->tags) {
@@ -352,188 +268,15 @@ class Monitor
             );
         }
 
-        $matched     = array();
-        $regexFailed = false;
-        $timedOut    = $this->outOfTime();
-        Converter::resetRegexFailures();
-
-        // Several rules take quadratic time on a long run of whitespace.
-        // No rule needs more than a few, so a run is cut to 64 characters.
-        if (strlen($value) > 64) {
-            $collapsed = preg_replace('/(\s{64})\s++/', '$1', $value);
-            if ($collapsed === null) {
-                $regexFailed = true;
-            } else {
-                $value = $collapsed;
+        $scanKeys = $this->scanKeys;
+        $filterSet = array_filter(
+            $filterSet,
+            function (Filter $filter) use ($key, $value, $scanKeys) {
+                return $filter->match($value) || $scanKeys && $filter->match($key);
             }
-        }
+        );
 
-        // a long value is scanned piece by piece, see $chunkSize
-        list($offsets, $truncated) = $this->chunkOffsets(strlen($value));
-
-        foreach ($offsets as $offset) {
-            if ($timedOut) {
-                break;
-            }
-            $chunk = count($offsets) === 1 ? $value : $this->cut($value, $offset, $this->chunkSize);
-
-            // use the converter
-            $rawChunk = $chunk;
-            $chunk    = Converter::runAll($chunk);
-            $chunk    = Converter::runCentrifuge($chunk, $this);
-
-            foreach ($filterSet as $index => $filter) {
-                if (isset($matched[$index])) {
-                    continue;
-                }
-                $result = $filter->tryMatch($chunk);
-                // some rules need the value as it was sent, see Filter::$raw
-                if (!$result && $filter->isRaw()) {
-                    $rawResult = $filter->tryMatch($rawChunk);
-                    $result    = $rawResult === false ? $result : $rawResult;
-                }
-                if ($result === null) {
-                    $regexFailed = true;
-                } elseif ($result) {
-                    $matched[$index] = $filter;
-                }
-                if ($this->outOfTime()) {
-                    $timedOut = true;
-                    break;
-                }
-            }
-        }
-
-        // scan keys if activated via config
-        if ($this->scanKeys && !$timedOut) {
-            $rawKey = (string) $key;
-            $key    = Converter::runAll($rawKey);
-            $key    = Converter::runCentrifuge($key, $this);
-
-            foreach ($filterSet as $index => $filter) {
-                if (isset($matched[$index])) {
-                    continue;
-                }
-                $result = $filter->tryMatch($key);
-                if (!$result && $filter->isRaw()) {
-                    $rawResult = $filter->tryMatch($rawKey);
-                    $result    = $rawResult === false ? $result : $rawResult;
-                }
-                if ($result === null) {
-                    $regexFailed = true;
-                } elseif ($result) {
-                    $matched[$index] = $filter;
-                }
-            }
-        }
-
-        ksort($matched);
-
-        // A rule or converter that could not be evaluated says nothing about
-        // the value being clean - report it instead of staying silent.
-        if ($regexFailed || Converter::getRegexFailures() > 0) {
-            $matched[] = new Filter(
-                self::REGEX_FAILURE_FILTER_ID,
-                '',
-                'Value could not be fully evaluated by the regular expression engine - possible evasion attempt',
-                array('dos', 'evasion'),
-                10
-            );
-        }
-
-        if ($timedOut) {
-            $matched[] = new Filter(
-                self::SCAN_TIME_FILTER_ID,
-                '',
-                'Scan time limit (max_scan_time) reached - value was not or only partially scanned',
-                array('dos', 'evasion'),
-                5
-            );
-        }
-
-        if ($truncated) {
-            $matched[] = new Filter(
-                self::OVERSIZED_FILTER_ID,
-                '',
-                'Value exceeds the scan limit (max_scan_length) - only its start and end were scanned',
-                array('dos', 'evasion'),
-                5
-            );
-        }
-
-        return $matched;
-    }
-
-    /**
-     * Whether the current run() has used up its scan time
-     *
-     * @return boolean
-     */
-    private function outOfTime(): bool
-    {
-        return $this->deadline !== null && hrtime(true) > $this->deadline;
-    }
-
-    /**
-     * Returns the byte offsets of the chunks a value of the given length is
-     * scanned in, and whether part of the value is left out
-     *
-     * @param integer $length length of the value in bytes
-     *
-     * @return array array(integer[] $offsets, boolean $truncated)
-     */
-    private function chunkOffsets(int $length): array
-    {
-        if ($length <= $this->chunkSize) {
-            return array(array(0), false);
-        }
-
-        // the first and the last chunk are scanned even on an empty budget
-        $available = max($this->scanBudget, 2 * $this->chunkSize);
-        $truncated = $length > $available;
-        $end       = $truncated ? $available - $this->chunkSize : $length;
-
-        $this->scanBudget = max(0, $this->scanBudget - min($length, $available));
-        $step      = $this->chunkSize - $this->chunkOverlap;
-        $offsets   = array();
-
-        for ($offset = 0; ; $offset += $step) {
-            $offsets[] = $offset;
-            if ($offset + $this->chunkSize >= $end) {
-                break;
-            }
-        }
-
-        if ($truncated) {
-            $offsets[] = $length - $this->chunkSize;
-        }
-
-        return array($offsets, $truncated);
-    }
-
-    /**
-     * Cuts a chunk out of a value without splitting a UTF-8 character
-     *
-     * @param string  $value  the value
-     * @param integer $offset where the chunk starts, in bytes
-     * @param integer $size   size of the chunk in bytes
-     *
-     * @return string
-     */
-    private function cut(string $value, int $offset, int $size): string
-    {
-        $length = strlen($value);
-        $end    = min($length, $offset + $size);
-
-        // 0x80-0xBF are continuation bytes: never start or stop on one
-        for ($i = 0; $i < 3 && $offset < $end && (ord($value[$offset]) & 0xC0) === 0x80; $i++) {
-            $offset++;
-        }
-        for ($i = 0; $i < 3 && $end < $length && (ord($value[$end]) & 0xC0) === 0x80; $i++) {
-            $end++;
-        }
-
-        return substr($value, $offset, $end - $offset);
+        return $filterSet;
     }
 
 

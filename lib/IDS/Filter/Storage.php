@@ -239,7 +239,6 @@ class Storage
                     $impact      = (string) $filter->impact;
                     $tags        = array_values((array) $filter->tags);
                     $description = (string) $filter->description;
-                    $raw         = (bool) (string) $filter->raw;
                 
                     $this->addFilter(
                             new \IDS\Filter(
@@ -247,8 +246,7 @@ class Storage
                                     $rule,
                                     $description,
                                     (array) $tags[0],
-                                    (int) $impact,
-                                    $raw
+                                    (int) $impact
                             )
                     );
                 
@@ -257,8 +255,7 @@ class Storage
                             'rule'        => $rule,
                             'impact'      => $impact,
                             'tags'        => $tags,
-                            'description' => $description,
-                            'raw'         => $raw
+                            'description' => $description
                     );
                 }
                 
@@ -335,7 +332,6 @@ class Storage
                     $impact      = (string) $filter->impact;
                     $tags        = array_values((array) $filter->tags);
                     $description = (string) $filter->description;
-                    $raw         = !empty($filter->raw);
     
                     $this->addFilter(
                         new \IDS\Filter(
@@ -343,8 +339,7 @@ class Storage
                             $rule,
                             $description,
                             (array) $tags[0],
-                            (int) $impact,
-                            $raw
+                            (int) $impact
                         )
                     );
     
@@ -353,8 +348,7 @@ class Storage
                         'rule'        => $rule,
                         'impact'      => $impact,
                         'tags'        => $tags,
-                        'description' => $description,
-                        'raw'         => $raw
+                        'description' => $description
                     );
                 }
     
@@ -392,7 +386,6 @@ class Storage
             $impact      = $filter['impact'];
             $tags        = $filter['tags'];
             $description = $filter['description'];
-            $raw         = !empty($filter['raw']);
         
             $this->addFilter(
                 new \IDS\Filter(
@@ -400,8 +393,7 @@ class Storage
                     $rule,
                     $description,
                     (array) $tags[0],
-                    (int) $impact,
-                    $raw
+                    (int) $impact
                 )
             );
         }

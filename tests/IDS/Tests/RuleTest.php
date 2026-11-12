@@ -21,14 +21,14 @@ namespace IDS\Tests;
 use IDS\Init;
 use IDS\Monitor;
 
-class RuleTest extends \PHPUnit\Framework\TestCase
+class RuleTest extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var Init
      */
     protected $init;
 
-    public static function getPayloads()
+    public function getPayloads()
     {
         return array(
             array(20, "if  ("),
@@ -47,7 +47,7 @@ class RuleTest extends \PHPUnit\Framework\TestCase
         );
     }
 
-    protected function setUp(): void
+    public function setUp()
     {
         $this->init = Init::init(IDS_CONFIG);
         $this->init->config['General']['tmp_path'] = IDS_TEMP_DIR;

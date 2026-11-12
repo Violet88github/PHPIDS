@@ -612,7 +612,7 @@ class MonitorTest extends \PHPUnit\Framework\TestCase
             $this->init
         );
         $result = $test->run($exploits);
-        $this->assertEquals(965, $result->getImpact());
+        $this->assertEquals(970, $result->getImpact());
     }
 
     public function testSelfContainedXSSList()
@@ -1049,7 +1049,7 @@ class MonitorTest extends \PHPUnit\Framework\TestCase
             $this->init
         );
         $result = $test->run($exploits);
-        $this->assertEquals(899, $result->getImpact());
+        $this->assertEquals(904, $result->getImpact());
     }
 
     public function testDTList()
@@ -1105,7 +1105,7 @@ class MonitorTest extends \PHPUnit\Framework\TestCase
             $this->init
         );
         $result = $test->run($exploits);
-        $this->assertEquals(126, $result->getImpact());
+        $this->assertEquals(142, $result->getImpact());
     }
 
     public function testURIList()
@@ -1186,7 +1186,7 @@ class MonitorTest extends \PHPUnit\Framework\TestCase
             $this->init
         );
         $result = $test->run($exploits);
-        $this->assertEquals(533, $result->getImpact());
+        $this->assertEquals(554, $result->getImpact());
     }
 
     public function testUTF7List()
@@ -1312,7 +1312,7 @@ class MonitorTest extends \PHPUnit\Framework\TestCase
             $this->init
         );
         $result = $test->run($exploits);
-        $this->assertEquals(20, $result->getImpact());
+        $this->assertEquals(30, $result->getImpact());
     }
 
     public function testAllowedHTMLScanningPositive()

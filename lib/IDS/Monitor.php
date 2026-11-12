@@ -309,8 +309,9 @@ class Monitor
      */
     private function detect($key, $value)
     {
-        // define the pre-filter
-        $preFilter = '([^\w\s/@!?\.]+|(?:\./)|(?:@@\w+)|(?:\+ADw)|(?:union\s+select))i';
+        // define the pre-filter; the last two alternatives let plain system
+        // paths such as /etc/passwd or /home/x/.ssh/id_rsa reach the rules
+        $preFilter = '([^\w\s/@!?\.]+|(?:\./)|(?:@@\w+)|(?:\+ADw)|(?:union\s+select)|(?:/(?:etc|proc)/)|(?:/\.\w))i';
 
         // to increase performance, only start detection if value isn't alphanumeric
         if ((!$this->scanKeys || !$key || !preg_match($preFilter, $key)) && (!$value || !preg_match($preFilter, $value))) {
@@ -377,14 +378,20 @@ class Monitor
             $chunk = count($offsets) === 1 ? $value : $this->cut($value, $offset, $this->chunkSize);
 
             // use the converter
-            $chunk = Converter::runAll($chunk);
-            $chunk = Converter::runCentrifuge($chunk, $this);
+            $rawChunk = $chunk;
+            $chunk    = Converter::runAll($chunk);
+            $chunk    = Converter::runCentrifuge($chunk, $this);
 
             foreach ($filterSet as $index => $filter) {
                 if (isset($matched[$index])) {
                     continue;
                 }
                 $result = $filter->tryMatch($chunk);
+                // some rules need the value as it was sent, see Filter::$raw
+                if (!$result && $filter->isRaw()) {
+                    $rawResult = $filter->tryMatch($rawChunk);
+                    $result    = $rawResult === false ? $result : $rawResult;
+                }
                 if ($result === null) {
                     $regexFailed = true;
                 } elseif ($result) {
@@ -399,14 +406,19 @@ class Monitor
 
         // scan keys if activated via config
         if ($this->scanKeys && !$timedOut) {
-            $key = Converter::runAll($key);
-            $key = Converter::runCentrifuge($key, $this);
+            $rawKey = (string) $key;
+            $key    = Converter::runAll($rawKey);
+            $key    = Converter::runCentrifuge($key, $this);
 
             foreach ($filterSet as $index => $filter) {
                 if (isset($matched[$index])) {
                     continue;
                 }
                 $result = $filter->tryMatch($key);
+                if (!$result && $filter->isRaw()) {
+                    $rawResult = $filter->tryMatch($rawKey);
+                    $result    = $rawResult === false ? $result : $rawResult;
+                }
                 if ($result === null) {
                     $regexFailed = true;
                 } elseif ($result) {

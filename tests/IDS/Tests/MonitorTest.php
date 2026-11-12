@@ -25,14 +25,14 @@ use IDS\Report;
 /**
  * @large
  */
-class MonitorTest extends \PHPUnit_Framework_TestCase
+class MonitorTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var Init
      */
     protected $init;
 
-    public function setUp()
+    protected function setUp(): void
     {
         $this->init = Init::init(IDS_CONFIG);
         $this->init->config['General']['filter_type'] = IDS_FILTER_TYPE;

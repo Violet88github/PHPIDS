@@ -119,7 +119,26 @@ class Filter
             );
         }
 
-        return (bool) preg_match('/' . $this->getRule() . '/ms', strtolower($input));
+        return (bool) $this->tryMatch($input);
+    }
+
+    /**
+     * Matches a string against current filter and tells a failed match apart
+     *
+     * preg_match() returns false when PCRE gives up (backtrack limit, JIT
+     * stack limit, malformed UTF-8). match() cannot tell that from "the rule
+     * did not match", which let oversized or crafted input slip past a rule.
+     *
+     * @param string $input the string input to match
+     *
+     * @return boolean|null true on a match, false on no match, null when the
+     *                      regular expression could not be evaluated
+     */
+    public function tryMatch(string $input): ?bool
+    {
+        $result = @preg_match('/' . $this->getRule() . '/ms', strtolower($input));
+
+        return $result === false ? null : (bool) $result;
     }
 
     /**

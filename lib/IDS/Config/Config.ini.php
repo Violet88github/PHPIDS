@@ -16,6 +16,22 @@
     tmp_path        = tmp
     scan_keys       = false
 
+    ; Long values are scanned in overlapping chunks, because the rules are
+    ; written for short input: on a long value some of them take very long or
+    ; fail, which stalls the request or hides an attack. Sizes are in bytes.
+    ;scan_chunk_size    = 4096
+    ;scan_chunk_overlap = 1024
+
+    ; Most bytes of long values scanned per request. Of a value that no
+    ; longer fits, only the start and the end are scanned, and it is
+    ; reported with filter 9002.
+    ;max_scan_length    = 524288
+
+    ; Seconds one request may spend in the scan, 0 for no limit. Values that
+    ; are not scanned in time are reported with filter 9003. How long a scan
+    ; takes depends heavily on pcre.jit: keep it enabled.
+    ;max_scan_time      = 2
+
     ; in case you want to use a different HTMLPurifier source, specify it here
     ; By default, those files are used that are being shipped with PHPIDS
     HTML_Purifier_Cache = vendors/htmlpurifier/HTMLPurifier/DefinitionCache/Serializer

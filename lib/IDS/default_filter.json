@@ -260,7 +260,7 @@
       },
       {
         "id":"21",
-        "rule":"(?:,\\s*(?:alert|showmodaldialog|eval)\\s*,)|(?::\\s*eval\\s*[^\\s])|([^:\\s\\w,.\\\/?+-]\\s*)?(?<![a-z\\\/_@])(\\s*return\\s*)?(?:(?:document\\s*\\.)?(?:.+\\\/)?(?:alert|eval|msgbox|showmod(?:al|eless)dialog|showhelp|prompt|write(?:ln)?|confirm|dialog|open))\\s*(?:[^.a-z\\s\\-]|(?:\\s*[^\\s\\w,.@\\\/+-]))|(?:java[\\s\\\/]*\\.[\\s\\\/]*lang)|(?:\\w\\s*=\\s*new\\s+\\w+)|(?:&\\s*\\w+\\s*\\)[^,])|(?:\\+[\\W\\d]*new\\s+\\w+[\\W\\d]*\\+)|(?:document\\.\\w)",
+        "rule":"(?:,\\s*(?:alert|showmodaldialog|eval)\\s*,)|(?::\\s*eval\\s*[^\\s])|(?:([^:\\s\\w,.\\\/?+-]\\s*)?(?<![a-z\\\/_@])(\\s*return\\s*)?(?:document\\s*\\.)?|(?<=.\\\/))(?:(?:alert|eval|msgbox|showmod(?:al|eless)dialog|showhelp|prompt|write(?:ln)?|confirm|dialog|open))\\s*(?:[^.a-z\\s\\-]|(?:\\s*[^\\s\\w,.@\\\/+-]))|(?:java[\\s\\\/]*\\.[\\s\\\/]*lang)|(?:\\w\\s*=\\s*new\\s+\\w+)|(?:&\\s*\\w+\\s*\\)[^,])|(?:\\+[\\W\\d]*new\\s+\\w+[\\W\\d]*\\+)|(?:document\\.\\w)",
         "description":"Detects very basic XSS probings",
         "tags":{
           "tag":[
@@ -702,7 +702,7 @@
       },
       {
         "id":"57",
-        "rule":"(?:,.*[)\\da-f\"]\"(?:\".*\"|\\Z|[^\"]+))|(?:\\Wselect.+\\W*from)|((?:select|create|rename|truncate|load|alter|delete|update|insert|desc)\\s*\\(\\s*space\\s*\\()",
+        "rule":"(?:\\A[^,]*+,.*[)\\da-f\"]\"(?:\".*\"|\\Z|[^\"]+))|(?:\\Wselect.+\\W*from)|((?:select|create|rename|truncate|load|alter|delete|update|insert|desc)\\s*\\(\\s*space\\s*\\()",
         "description":"Detects MySQL comment-\/space-obfuscated injections and backtick termination",
         "tags":{
           "tag":[
@@ -927,6 +927,304 @@
           ]
         },
         "impact":"4"
+      },
+      {
+        "id":"79",
+        "rule":"(?:\\{\\{|\\$\\{|#\\{|\\*\\{|@\\(|<%=|\\{%)\\s*\\d{1,6}\\s*[*+\\-\\\/]\\s*[\"']?\\d{1,6}[\"']?\\s*(?:\\}\\}|\\}|\\)|%>|%\\})",
+        "description":"Detects server-side template injection probes such as {{7*7}} or ${7*7} (CWE-1336)",
+        "tags":{
+          "tag":[
+            "ssti",
+            "rce"
+          ]
+        },
+        "impact":"5",
+        "raw":"1"
+      },
+      {
+        "id":"80",
+        "rule":"(?:__class__|__mro__|__subclasses__|__globals__|__builtins__|__import__|_self\\.env\\b|registerundefinedfiltercallback|#_memberaccess)|(?:\\{\\{|\\{%|\\$\\{|#\\{|\\*\\{|%\\{|<%)[^{}%]{0,200}?(?:getruntime\\(|processbuilder|java\\.lang\\.|#context|freemarker\\.template|\\.getclass\\(|\\bpopen\\(|os\\.system|subprocess|config\\.items|request\\.application|settings\\.secret_key|constructor\\.constructor)|\\{\\\/?php\\}",
+        "description":"Detects server-side template and expression language injection reaching for runtime internals (CWE-1336, CWE-917)",
+        "tags":{
+          "tag":[
+            "ssti",
+            "rce"
+          ]
+        },
+        "impact":"6",
+        "raw":"1"
+      },
+      {
+        "id":"81",
+        "rule":"\\$\\{\\s*jndi\\s*:|\\$\\{[^{}]{0,40}\\$\\{[^{}]{0,60}:",
+        "description":"Detects JNDI lookups and nested lookup obfuscation as used against Log4j (Log4Shell, CWE-917)",
+        "tags":{
+          "tag":[
+            "rce",
+            "rfe"
+          ]
+        },
+        "impact":"7",
+        "raw":"1"
+      },
+      {
+        "id":"82",
+        "rule":"\\$\\{\\s*(?:env|sys|java|ctx|main|bundle|k8s|docker|web|log4j|spring|lower|upper|date|base64decoder|base64encoder|url|urldecoder|urlencoder|script|dns|file|properties|resourcebundle|xml|const)\\s*:",
+        "description":"Detects lookup expressions of Log4j and Apache Commons Text such as ${env:...} or ${script:...} (CWE-917)",
+        "tags":{
+          "tag":[
+            "rce",
+            "id"
+          ]
+        },
+        "impact":"4",
+        "raw":"1"
+      },
+      {
+        "id":"83",
+        "rule":"(?:169\\.254\\.169\\.254|169\\.254\\.170\\.2|100\\.100\\.100\\.200|192\\.0\\.0\\.192|fd00:ec2::254|metadata\\.google\\.internal|metadata\\.azure\\.com|metadata\\.tencentyun\\.com|metadata\\.platformequinix\\.com|\\\/latest\\\/(?:meta-data|user-data|dynamic)\\b|\\\/computemetadata\\\/v1|\\\/metadata\\\/(?:instance|identity)\\b)",
+        "description":"Detects server-side request forgery aimed at cloud metadata services (CWE-918)",
+        "tags":{
+          "tag":[
+            "ssrf",
+            "id"
+          ]
+        },
+        "impact":"6",
+        "raw":"1"
+      },
+      {
+        "id":"84",
+        "rule":"(?:https?|ftps?|ldaps?|sftp|smb)\\s*:\\\/\\\/(?:[^\\\/\\s@]{0,60}@)?(?:localhost\\b|127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|0\\.0\\.0\\.0|0x[0-9a-f]{8}\\b|0[0-7]{2,}\\.\\d|\\d{8,10}(?:[:\\\/]|$)|\\[(?:::1?|::ffff:[\\d.:a-f]{1,40}|f[cd][0-9a-f]{2}:[^\\]]{0,40}|fe80:[^\\]]{0,40})\\]|10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}|172\\.(?:1[6-9]|2\\d|3[01])\\.\\d{1,3}\\.\\d{1,3}|169\\.254\\.\\d{1,3}\\.\\d{1,3})|(?:gopher|dict|tftp|netdoc|jar)\\s*:\\\/\\\/",
+        "description":"Detects server-side request forgery aimed at loopback, link-local and private network addresses, and URL schemes used for it (CWE-918)",
+        "tags":{
+          "tag":[
+            "ssrf"
+          ]
+        },
+        "impact":"4",
+        "raw":"1"
+      },
+      {
+        "id":"85",
+        "rule":"(?:php:\\\/\\\/(?:filter|input|stdin|memory|temp|fd|output|stdout|stderr)|(?:phar|expect|zip|rar|ogg|ssh2\\.(?:shell|exec|tunnel|sftp|scp)|glob|compress\\.(?:zlib|bzip2)|zlib|bzip2|data):\\\/\\\/)",
+        "description":"Detects PHP stream wrappers used for file inclusion and deserialization (CWE-98)",
+        "tags":{
+          "tag":[
+            "lfi",
+            "rfe"
+          ]
+        },
+        "impact":"5",
+        "raw":"1"
+      },
+      {
+        "id":"86",
+        "rule":"(?:(?:^|[;{}=&\"'\\s])[oc]:\\+?\\d{1,6}:\"[\\w\\\\]{1,200}\":\\d{1,6}:\\{|\\bro0ab[a-z0-9+\\\/]{16,}|\\baaeaaad\\\/{4,})",
+        "description":"Detects serialized PHP objects and serialized Java or .NET object streams (CWE-502)",
+        "tags":{
+          "tag":[
+            "deserialization",
+            "rce"
+          ]
+        },
+        "impact":"6",
+        "raw":"1"
+      },
+      {
+        "id":"87",
+        "rule":"(?:[\"']\\$(?:ne|eq|gt|gte|lt|lte|in|nin|regex|where|exists|or|and|not|nor|expr|function|accumulator|jsonschema|elemmatch|all|size|type|mod|options)[\"']\\s*:|\\[\\$(?:ne|eq|gt|gte|lt|lte|in|nin|regex|where|exists|or|and|not|nor|expr)\\]|\\$where\\s*[:=]|\\bdb\\.\\w{1,40}\\.(?:find|drop|insert|update|remove|delete|aggregate)\\w{0,8}\\s*\\()",
+        "description":"Detects NoSQL operator injection as used against MongoDB (CWE-943)",
+        "tags":{
+          "tag":[
+            "nosqli"
+          ]
+        },
+        "impact":"5",
+        "raw":"1"
+      },
+      {
+        "id":"88",
+        "rule":"(?:<!entity\\s+(?:%\\s+)?[\\w.-]{1,60}\\s+(?:system|public)\\s|<!doctype\\s+[\\w.-]{1,60}\\s+(?:system|public)\\s+[\"'][^\"']{0,10}(?:file|https?|ftp|php|expect|gopher|jar|data|netdoc):|<!doctype[^>\\[]{0,200}\\[\\s*<!(?:entity|element|attlist)|<xi:include\\s)",
+        "description":"Detects XML external entity declarations and XInclude (CWE-611)",
+        "tags":{
+          "tag":[
+            "xxe",
+            "lfi"
+          ]
+        },
+        "impact":"6",
+        "raw":"1"
+      },
+      {
+        "id":"89",
+        "rule":"(?:__proto__|(?:^|[\"'\\[.{,\\s])constructor[\"'\\]]?\\s*(?:\\.|\\[|:\\s*\\{)\\s*[\"']?prototype\\b)",
+        "description":"Detects JavaScript prototype pollution (CWE-1321)",
+        "tags":{
+          "tag":[
+            "prototype pollution"
+          ]
+        },
+        "impact":"5",
+        "raw":"1"
+      },
+      {
+        "id":"90",
+        "rule":"(?:\\$\\(\\s*(?:wget|curl|nc|ncat|netcat|nslookup|dig|ping|telnet|tftp|ssh|scp|certutil|bitsadmin|powershell|pwsh|cat|tac|head|tail|ls|dir|chmod|chown|rm|mv|cp|echo|printf|base64|xxd|openssl|awk|sed|grep|find|xargs|tar|nohup|touch|mkfifo|kill|env|printenv|bash|sh|zsh|ksh|python[23]?|perl|php|ruby|node|id|whoami|uname|hostname|ifconfig|ipconfig|sleep|pwd)\\b[^)]{0,200}\\)|(?:[;&|]|\\|\\||&&)\\s*(?:wget|curl|nc|ncat|netcat|nslookup|dig|ping|telnet|tftp|ssh|scp|certutil|bitsadmin|powershell|pwsh)\\s+(?:-{1,2}\\w|https?:|[\\w-]+(?:\\.[\\w-]+)+|\\\/|\\.{1,2}\\\/|\\d)|(?:[;&|]|\\|\\||&&)\\s*(?:cat|tac|head|tail|more|less|ls|dir|chmod|chown|rm|mv|cp|echo|printf|base64|xxd|openssl|awk|sed|grep|find|xargs|tar|nohup|touch|mkfifo|kill|env|type|net|bash|sh|zsh|ksh|python[23]?|perl|php|ruby|node|id|uname)\\s+(?:-{1,2}[a-z]|\\\/[\\w.]|\\.{1,2}\\\/|~\\\/|\\$[\\w{(]|>)|(?:[;&|]|\\|\\||&&)\\s*(?:whoami|ifconfig|ipconfig|printenv|uname(?:\\s+-a)?)\\s*(?:$|[;&|#'\")`])|(?:[;&|]|\\|\\||&&)\\s*sleep\\s+\\d{1,5}\\s*(?:$|[;&|#'\")`])|\\|\\s*(?:ba|z|k|da)?sh\\s*(?:$|[;&|)'\"`])|\\$\\{ifs\\}|\\$ifs\\b|\\{(?:wget|curl|nc|ncat|netcat|nslookup|dig|ping|telnet|tftp|ssh|scp|certutil|bitsadmin|powershell|pwsh|cat|tac|head|tail|ls|dir|chmod|chown|rm|mv|cp|echo|printf|base64|xxd|openssl|awk|sed|grep|find|xargs|tar|nohup|touch|mkfifo|kill|env|printenv|bash|sh|zsh|ksh|python[23]?|perl|php|ruby|node|id|whoami|uname|hostname|ifconfig|ipconfig|sleep|pwd),[^}\\s]{1,100}\\}|\\\/dev\\\/(?:tcp|udp)\\\/)",
+        "description":"Detects operating system command injection through command separators, command substitution and shell variables (CWE-78)",
+        "tags":{
+          "tag":[
+            "rce",
+            "id"
+          ]
+        },
+        "impact":"6",
+        "raw":"1"
+      },
+      {
+        "id":"91",
+        "rule":"`\\s*(?:wget|curl|nc|ncat|netcat|nslookup|dig|ping|telnet|tftp|ssh|scp|certutil|bitsadmin|powershell|pwsh|cat|tac|head|tail|ls|dir|chmod|chown|rm|mv|cp|echo|printf|base64|xxd|openssl|awk|sed|grep|find|xargs|tar|nohup|touch|mkfifo|kill|env|printenv|bash|sh|zsh|ksh|python[23]?|perl|php|ruby|node|id|whoami|uname|hostname|ifconfig|ipconfig|sleep|pwd)\\b[^`\\n]{0,200}`",
+        "description":"Detects operating system commands in backticks (CWE-78)",
+        "tags":{
+          "tag":[
+            "rce"
+          ]
+        },
+        "impact":"4",
+        "raw":"1"
+      },
+      {
+        "id":"92",
+        "rule":"(?:[\\r\\n]|%0[da])\\s*(?:set-cookie\\s*:|transfer-encoding\\s*:|content-length\\s*:\\s*\\d|content-type\\s*:\\s*\\w{1,20}\\\/|x-forwarded-(?:for|host)\\s*:|http\\\/[12](?:\\.[01])?\\s+\\d{3}\\b)|(?:%0d%0a){2}",
+        "description":"Detects HTTP header injection and response splitting (CWE-113)",
+        "tags":{
+          "tag":[
+            "crlf",
+            "id"
+          ]
+        },
+        "impact":"5",
+        "raw":"1"
+      },
+      {
+        "id":"93",
+        "rule":"(?:\\)\\s*\\(\\s*[|&!]\\s*\\(?|\\*\\s*\\)\\s*\\(\\s*[\\w-]{1,40}\\s*=|\\(\\s*[|&]\\s*\\(\\s*[\\w-]{1,40}\\s*[~<>]?=\\s*\\*)",
+        "description":"Detects LDAP filter injection (CWE-90)",
+        "tags":{
+          "tag":[
+            "ldapi"
+          ]
+        },
+        "impact":"5",
+        "raw":"1"
+      },
+      {
+        "id":"94",
+        "rule":"(?:(?:\\.\\.|\\.%2e|%2e\\.|%2e%2e|%252e%252e|%c0%ae%c0%ae)(?:%2f|%5c|%252f|%255c|%c0%af|%c1%9c)|(?:%2f|%5c|%252f|%255c)(?:\\.\\.|%2e%2e)|\\.\\.;\\\/|\\\/proc\\\/(?:self|\\d{1,7})\\\/(?:environ|cmdline|maps|fd\\\/\\d|cwd|root|status|mounts)|\\\/\\.(?:env|git\\\/(?:config|head)|aws\\\/credentials|ssh\\\/(?:id_[a-z0-9]+|authorized_keys)|htpasswd|docker\\\/config\\.json|kube\\\/config)\\b|\\\/etc\\\/(?:shadow|sudoers)\\b|wp-config\\.php|\\\/var\\\/run\\\/secrets\\\/kubernetes)",
+        "description":"Detects encoded directory traversal and requests for sensitive system files (CWE-22)",
+        "tags":{
+          "tag":[
+            "dt",
+            "lfi",
+            "id"
+          ]
+        },
+        "impact":"5",
+        "raw":"1"
+      },
+      {
+        "id":"95",
+        "rule":"(?:allow_url_include|auto_prepend_file|auto_append_file)[\\s_+]*(?:=|%3d)[\\s_+]*(?:1|on|php:|data:|https?:|ftp:|\\\/|%)|(?:^|[\\s_+?&.]|\\xad|%ad)-?d[\\s_+]+(?:allow_url_include|auto_prepend_file|auto_append_file|disable_functions|open_basedir|safe_mode|suhosin\\.simulation|cgi\\.force_redirect|cgi\\.redirect_status_env)\\b",
+        "description":"Detects PHP-CGI argument injection (CVE-2012-1823, CVE-2024-4577)",
+        "tags":{
+          "tag":[
+            "rce",
+            "php"
+          ]
+        },
+        "impact":"7",
+        "raw":"1"
+      },
+      {
+        "id":"96",
+        "rule":"convert\\.iconv\\.[\\w.\\-*]{2,60}(?:\\||%7c)\\s*(?:convert|string|zlib|dechunk)\\b|iso-?2022-?cn-?ext|(?:\\||%7c|\\\/|=)dechunk(?:\\||%7c|\\\/)",
+        "description":"Detects PHP filter chains and iconv filter abuse used for code execution (CVE-2024-2961)",
+        "tags":{
+          "tag":[
+            "lfi",
+            "rce",
+            "php"
+          ]
+        },
+        "impact":"7",
+        "raw":"1"
+      },
+      {
+        "id":"97",
+        "rule":"(?:guzzlehttp\\\\+psr7\\\\+fnstream|guzzlehttp\\\\+cookie\\\\+(?:file|session)cookiejar|illuminate\\\\+broadcasting\\\\+pendingbroadcast|illuminate\\\\+foundation\\\\+testing\\\\+pendingcommand|illuminate\\\\+notifications\\\\+channelmanager|laravel\\\\+serializableclosure|opis\\\\+closure\\\\+serializableclosure|monolog\\\\+handler\\\\+syslogudphandler|symfony\\\\+component\\\\+process\\\\+process\\b|swift_(?:bytestream_filebytestream|keycache_diskkeycache)|yii\\\\+rbac\\\\+phpmanager|yii\\\\+db\\\\+batchqueryresult|think\\\\+process\\b|\\bphpggc\\b)",
+        "description":"Detects class names of known PHP deserialization gadget chains, as used against Livewire (CVE-2025-54068) and leaked Laravel APP_KEYs",
+        "tags":{
+          "tag":[
+            "deserialization",
+            "rce",
+            "php"
+          ]
+        },
+        "impact":"7",
+        "raw":"1"
+      },
+      {
+        "id":"98",
+        "rule":"(?:eval-stdin\\.php|_ignition\\\/execute-solution|\\\/pearcmd\\b|\\\\+think\\\\+(?:app|request|container|process)\\b|\\binvokefunction\\b|_method=__construct|call_user_func_array[^\\n]{0,60}vars\\[)",
+        "description":"Detects exploit signatures for PHP frameworks and tools: ThinkPHP invokefunction, PHPUnit eval-stdin (CVE-2017-9841), Laravel Ignition (CVE-2021-3129), pearcmd inclusion",
+        "tags":{
+          "tag":[
+            "rce",
+            "php",
+            "id"
+          ]
+        },
+        "impact":"6",
+        "raw":"1"
+      },
+      {
+        "id":"99",
+        "rule":"(?:^|[.\\s+?&])--(?:env|no-debug)(?:=|$|[.\\s&])",
+        "description":"Detects command line options injected through the query string (Laravel CVE-2024-52301, Symfony CVE-2024-50340)",
+        "tags":{
+          "tag":[
+            "php",
+            "id"
+          ]
+        },
+        "impact":"4",
+        "raw":"1"
+      },
+      {
+        "id":"100",
+        "rule":"\\b(?:system|passthru|shell_exec|proc_open|popen|pcntl_exec)\\(\\s*(?:[\"'][^\"']{1,200}[\"']|\\$_?\\w{1,40}(?:\\[[^\\]]{0,40}\\])?)\\s*[,)]",
+        "description":"Detects calls to PHP functions that run operating system commands (CWE-94)",
+        "tags":{
+          "tag":[
+            "rce",
+            "php"
+          ]
+        },
+        "impact":"5",
+        "raw":"1"
+      },
+      {
+        "id":"101",
+        "rule":"<%\\s*(?:include|require|loop|with|if|else_if|cached|uncached|control|base_tag|end_(?:if|loop|with|cached|control))\\b[^%]{0,200}%>",
+        "description":"Detects Silverstripe template tags in input, the vector of the template parser code execution flaws CVE-2026-54721 and CVE-2026-54718",
+        "tags":{
+          "tag":[
+            "ssti",
+            "php"
+          ]
+        },
+        "impact":"3",
+        "raw":"1"
       }
     ]
   }

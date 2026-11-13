@@ -81,6 +81,18 @@ class Filter
     protected $id;
 
     /**
+     * Whether the rule is also matched against the value as it was sent
+     *
+     * Rules normally only see the value after the converters have run. Those
+     * rewrite parts of it (an IP address like 169.254.169.254 ends up as
+     * " 1 1 1254", backticks become double quotes), so a rule that needs the
+     * original text sets this flag.
+     *
+     * @var boolean
+     */
+    protected $raw = false;
+
+    /**
      * Constructor
      *
      * @param integer $id          filter id
@@ -88,11 +100,13 @@ class Filter
      * @param string $description filter description
      * @param string[]|array    $tags        list of tags
      * @param integer $impact      filter impact level
+     * @param boolean $raw         also match the value before the converters ran
      *
      * @return \IDS\Filter
      */
-    public function __construct(int $id, string $rule, string $description, array $tags, int $impact)
+    public function __construct(int $id, string $rule, string $description, array $tags, int $impact, bool $raw = false)
     {
+        $this->raw         = $raw;
         $this->id          = $id;
         $this->rule        = $rule;
         $this->tags        = $tags;
@@ -119,7 +133,36 @@ class Filter
             );
         }
 
-        return (bool) preg_match('/' . $this->getRule() . '/ms', strtolower($input));
+        return (bool) $this->tryMatch($input);
+    }
+
+    /**
+     * Matches a string against current filter and tells a failed match apart
+     *
+     * preg_match() returns false when PCRE gives up (backtrack limit, JIT
+     * stack limit, malformed UTF-8). match() cannot tell that from "the rule
+     * did not match", which let oversized or crafted input slip past a rule.
+     *
+     * @param string $input the string input to match
+     *
+     * @return boolean|null true on a match, false on no match, null when the
+     *                      regular expression could not be evaluated
+     */
+    public function tryMatch(string $input): ?bool
+    {
+        $result = @preg_match('/' . $this->getRule() . '/ms', strtolower($input));
+
+        return $result === false ? null : (bool) $result;
+    }
+
+    /**
+     * Whether the rule is also matched against the unconverted value
+     *
+     * @return boolean
+     */
+    public function isRaw(): bool
+    {
+        return $this->raw;
     }
 
     /**

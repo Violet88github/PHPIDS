@@ -120,7 +120,7 @@
             <tag>id</tag>
             <tag>lfi</tag>
         </tags>
-        <impact>5</impact>
+        <impact>15</impact>
     </filter>
     <filter>
         <id>13</id>
@@ -620,7 +620,7 @@
             <tag>rfe</tag>
             <tag>lfi</tag>
         </tags>
-        <impact>7</impact>
+        <impact>15</impact>
     </filter>
     <filter>
         <id>60</id>
@@ -631,7 +631,7 @@
             <tag>rfe</tag>
             <tag>lfi</tag>
         </tags>
-        <impact>7</impact>
+        <impact>15</impact>
     </filter>
     <filter>
         <id>62</id>
@@ -652,7 +652,7 @@
             <tag>id</tag>
             <tag>spam</tag>
         </tags>
-        <impact>5</impact>
+        <impact>10</impact>
     </filter>
     <filter>
         <id>64</id>
@@ -662,7 +662,7 @@
             <tag>lfi</tag>
             <tag>rfe</tag>
         </tags>
-        <impact>5</impact>
+        <impact>10</impact>
     </filter>
     <filter>
         <id>65</id>
@@ -803,7 +803,7 @@
             <tag>ssti</tag>
             <tag>rce</tag>
         </tags>
-        <impact>6</impact>
+        <impact>15</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -814,7 +814,7 @@
             <tag>rce</tag>
             <tag>rfe</tag>
         </tags>
-        <impact>7</impact>
+        <impact>25</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -836,7 +836,7 @@
             <tag>ssrf</tag>
             <tag>id</tag>
         </tags>
-        <impact>6</impact>
+        <impact>20</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -857,7 +857,7 @@
             <tag>lfi</tag>
             <tag>rfe</tag>
         </tags>
-        <impact>5</impact>
+        <impact>15</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -868,7 +868,7 @@
             <tag>deserialization</tag>
             <tag>rce</tag>
         </tags>
-        <impact>6</impact>
+        <impact>15</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -878,7 +878,7 @@
         <tags>
             <tag>nosqli</tag>
         </tags>
-        <impact>5</impact>
+        <impact>10</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -889,7 +889,7 @@
             <tag>xxe</tag>
             <tag>lfi</tag>
         </tags>
-        <impact>6</impact>
+        <impact>15</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -899,7 +899,7 @@
         <tags>
             <tag>prototype pollution</tag>
         </tags>
-        <impact>5</impact>
+        <impact>10</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -910,7 +910,7 @@
             <tag>rce</tag>
             <tag>id</tag>
         </tags>
-        <impact>6</impact>
+        <impact>20</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -931,7 +931,7 @@
             <tag>crlf</tag>
             <tag>id</tag>
         </tags>
-        <impact>5</impact>
+        <impact>10</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -941,7 +941,7 @@
         <tags>
             <tag>ldapi</tag>
         </tags>
-        <impact>5</impact>
+        <impact>10</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -953,7 +953,7 @@
             <tag>lfi</tag>
             <tag>id</tag>
         </tags>
-        <impact>5</impact>
+        <impact>15</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -964,7 +964,7 @@
             <tag>rce</tag>
             <tag>php</tag>
         </tags>
-        <impact>7</impact>
+        <impact>25</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -976,7 +976,7 @@
             <tag>rce</tag>
             <tag>php</tag>
         </tags>
-        <impact>7</impact>
+        <impact>20</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -988,7 +988,7 @@
             <tag>rce</tag>
             <tag>php</tag>
         </tags>
-        <impact>7</impact>
+        <impact>25</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -1000,7 +1000,7 @@
             <tag>php</tag>
             <tag>id</tag>
         </tags>
-        <impact>6</impact>
+        <impact>20</impact>
         <raw>1</raw>
     </filter>
     <filter>
@@ -1022,7 +1022,7 @@
             <tag>rce</tag>
             <tag>php</tag>
         </tags>
-        <impact>5</impact>
+        <impact>15</impact>
         <raw>1</raw>
     </filter>
     <filter>
